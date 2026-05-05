@@ -14,21 +14,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const jql = `project = ${projectKey} ORDER BY updated DESC`;
+    const jql = `project = "${projectKey}"`;
     
-    // Using /rest/api/3/search/jql with POST
-    const response = await axios.post(
-      `${jiraUrl}/rest/api/3/search/jql`,
-      {
-        jql: jql,
-        maxResults: 100,
-        fields: ['key', 'summary', 'status', 'priority', 'assignee', 'duedate', 'created', 'updated', 'issuetype', 'components', 'labels']
-      },
+    const response = await axios.get(
+      `${jiraUrl}/rest/api/2/search?jql=${encodeURIComponent(jql)}&maxResults=100&fields=key,summary,status,priority,assignee,duedate,created,updated,issuetype`,
       {
         headers: {
           'Authorization': `Basic ${jiraAuth}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Accept': 'application/json'
         }
       }
     );
@@ -43,8 +36,6 @@ export default async function handler(req, res) {
       created: issue.fields.created,
       updated: issue.fields.updated,
       type: issue.fields.issuetype?.name || 'Task',
-      components: issue.fields.components?.map(c => c.name) || [],
-      labels: issue.fields.labels || [],
       url: `${jiraUrl}/browse/${issue.key}`
     }));
 
@@ -55,12 +46,10 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Jira API Error:', error.response?.data || error.message);
-    console.error('Status Code:', error.response?.status);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch issues from Jira',
-      details: error.message,
-      status: error.response?.status
+      details: error.message
     });
   }
 }
