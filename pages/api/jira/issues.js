@@ -16,19 +16,18 @@ export default async function handler(req, res) {
   try {
     const jql = `project = ${projectKey} ORDER BY updated DESC`;
     
-    // Using the EXACT endpoint Jira requires: /rest/api/3/search/jql
-    const response = await axios.post(
-      `${jiraUrl}/rest/api/3/search/jql`,
+    // Try API v2 endpoint which is more stable
+    const response = await axios.get(
+      `${jiraUrl}/rest/api/2/search`,
       {
-        jql: jql,
-        maxResults: 100,
-        fields: ['key', 'summary', 'status', 'priority', 'assignee', 'duedate', 'created', 'updated', 'issuetype', 'components', 'labels']
-      },
-      {
+        params: {
+          jql: jql,
+          maxResults: 100,
+          fields: 'key,summary,status,priority,assignee,duedate,created,updated,issuetype,components,labels'
+        },
         headers: {
           'Authorization': `Basic ${jiraAuth}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
+          'Accept': 'application/json'
         }
       }
     );
