@@ -14,17 +14,22 @@ export default async function handler(req, res) {
   }
 
   try {
-    const jql = `project = "${projectKey}"`;
+    const jql = `project = ${projectKey}`;
     
-    const response = await axios.get(
-      `${jiraUrl}/rest/api/2/search?jql=${encodeURIComponent(jql)}&maxResults=100&fields=key,summary,status,priority,assignee,duedate,created,updated,issuetype`,
-      {
-        headers: {
-          'Authorization': `Basic ${jiraAuth}`,
-          'Accept': 'application/json'
-        }
+    const response = await axios({
+      method: 'post',
+      url: `${jiraUrl}/rest/api/3/search/jql`,
+      headers: {
+        'Authorization': `Basic ${jiraAuth}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      data: {
+        jql: jql,
+        maxResults: 100,
+        fields: 'key,summary,status,priority,assignee,duedate,created,updated,issuetype'
       }
-    );
+    });
 
     const issues = response.data.issues.map(issue => ({
       key: issue.key,
@@ -49,7 +54,8 @@ export default async function handler(req, res) {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch issues from Jira',
-      details: error.message
+      details: error.message,
+      status: error.response?.status
     });
   }
 }
